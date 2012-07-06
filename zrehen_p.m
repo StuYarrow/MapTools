@@ -1,4 +1,4 @@
-function [zr, p] = zrehen_p(x, y, z, nMC, pairs, circular)
+function [zrehen, p] = zrehen_p(x, y, z, nMC, pairs, circular)
 
 % pairs is not used, but is explicitly in the args for compatibility with R2008b
 
@@ -37,7 +37,7 @@ else
 end
 
 % Compute measure
-zr = mean(fIntruders(zr));
+zrehen = mean(fIntruders(zr));
 
 % Do MC permutation
 samps = zeros(nMC,1);
@@ -46,6 +46,6 @@ for i = 1 : nMC
     samps(i) = mean(fIntruders(zrShuf));
 end
 
-p = sum(samps < zr) ./ nMC;
+p = sum(samps < zrehen) ./ nMC;
 
 end
