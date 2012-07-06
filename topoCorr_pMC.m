@@ -11,12 +11,12 @@ mask = ~~tril(ones(n), -1);
 
 % Define feature space distance functions
     function d = fdz(r)
-        d = abs(r(edges(:,1)) - r(edges(:,2)));
+        d = abs(bsxfun(@minus, r, r'));
         d = d(mask);
     end
 
     function d = fdz_circ(r)
-        d = abs(r(edges(:,1)) - r(edges(:,2)));
+        d = abs(bsxfun(@minus, r, r'));
         d(d > n) = n - d(d > n); % Resolve 'long way round' distances
         d = d(mask);
     end

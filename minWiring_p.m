@@ -31,7 +31,7 @@ for i = 1 : nMC
     mwSamps(i) = mean(dx.^2 + dy.^2);
     
     % Do MC permutation
-    order = randperm(n);
+    order = randperm(n)';
     order = fCirc(order);
     
     dx = diff(x(order));
