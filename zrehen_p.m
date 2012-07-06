@@ -1,6 +1,6 @@
 function [zr, p] = zrehen_p(x, y, z, nMC, pairs, circular)
 
-% pairs is not used, but explicitly in the args for compatibility with R2008b
+% pairs is not used, but is explicitly in the args for compatibility with R2008b
 
 x = x(:);
 y = y(:);
