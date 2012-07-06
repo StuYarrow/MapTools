@@ -1,5 +1,7 @@
 function [tp, p] = topoProd_P(x, y, z, nMC, pairs, circular)
 
+% pairs is not used, but is explicitly in the args for compatibility with R2008b
+
 nMC2 = 100;
 
 if length(y) ~= length(x) || length(z) ~= length(x)
