@@ -37,13 +37,13 @@ else
 end
 
 % Compute measure
-zrehen = mean(fIntruders(zr));
+zrehen = mean(fIntruders(zr)) ./ n;
 
 % Do MC permutation
 samps = zeros(nMC,1);
 for i = 1 : nMC
     zrShuf = zr(randperm(n));
-    samps(i) = mean(fIntruders(zrShuf));
+    samps(i) = mean(fIntruders(zrShuf)) ./ n;
 end
 
 p = sum(samps < zrehen) ./ nMC;
