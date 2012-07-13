@@ -47,11 +47,7 @@ classdef TopoMap < handle
                     xi = randn(noiseSize);
                     xr = randn(noiseSize);
                     
-                    H = fft2(h, noiseSize, noiseSize);
-                    Xi = fft2(xi);
-                    Xr = fft2(xr);
-                    
-                    obj.map = angle( real(fftshift(ifft2(H .* Xr))) + real(fftshift(ifft2(H .* Xi))) * 1i );
+                    obj.map = angle( fftconv2(h, xr) + fftconv2(h, xi) * 1i );
                     
                 case 'clust'
                     obj.type = type;
