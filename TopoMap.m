@@ -43,8 +43,15 @@ classdef TopoMap < handle
                     % Generate noise, allowing additional area for filtering
                     noiseSize = obj.mapsize + length(fX);
                     
-                    % Filter noise and compute Arg()
-                    obj.map = angle(filter2(h, randn(noiseSize), 'valid') + filter2(h, randn(noiseSize), 'valid') * 1i);
+                    % Filter noise and compute Arg()                    
+                    xi = randn(noiseSize);
+                    xr = randn(noiseSize);
+                    
+                    H = fft2(h, noiseSize, noiseSize);
+                    Xi = fft2(xi);
+                    Xr = fft2(xr);
+                    
+                    obj.map = angle( real(fftshift(ifft2(H .* Xr))) + real(fftshift(ifft2(H .* Xi))) * 1i );
                     
                 case 'clust'
                     obj.type = type;
@@ -203,16 +210,19 @@ classdef TopoMap < handle
         function plot(obj)
             if obj.circular
                 cl = [-pi pi];
+                ticks = -pi : pi/2 : pi;
                 cmap = 'HSV';
             else
                 minVal = min(obj.map(:));
                 maxVal = max(obj.map(:));
                 cl = [minVal maxVal];
+                %ticks = minVal : diff(cl)/4 : maxVal;
                 cmap = 'jet';
             end
                 
             figure                
             imagesc(obj.map', cl)
+            set(gca, 'fontsize', 11)
             colormap(cmap)
             hold on
             set(gca, 'dataaspectratio', [1 1 1], 'ydir', 'normal')
@@ -220,6 +230,22 @@ classdef TopoMap < handle
             %xlabel('x')
             %ylabel('y')
             %title('Ground truth map')
+            
+            cbax = colorbar('southoutside');
+            
+            if obj.circular
+                set(cbax, 'xtick', ticks)
+                set(cbax, 'xticklabel', {'-p' '-p/2' '0' 'p/2' 'p'}, 'fontname', 'Symbol', 'fontsize', 14)
+            else
+                set(cbax, 'fontname', 'Symbol', 'fontsize', 14)
+            end
+            
+            set(gcf, 'Color', 'w')
+            set(gca, 'ActivePositionProperty', 'OuterPosition')
+            set(gcf, 'Units', 'centimeters');
+            set(gcf, 'OuterPosition', [5 10 16 16]);
+
+
         end
                 
     end
