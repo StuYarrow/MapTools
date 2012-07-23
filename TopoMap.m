@@ -85,9 +85,19 @@ classdef TopoMap < handle
         end
         
         
-        function [x, y, z] = observe(obj, sampleSpacing, SNR, makePlots, publish)
+        function [x, y, z] = observe(obj, sampleSpacing, SNR, makePlots, publish, varargin)
+            if length(varargin) >= 1
+                option = varargin{1};
+                
+                if option == 'N'
+                    nPoints = sampleSpacing;
+                end
+            end
+            
             % number of points at which to observe map 
-            nPoints = ceil(1 / sampleSpacing^2);
+            if ~exist('nPoints', 'var')
+                nPoints = ceil(1 / sampleSpacing^2);
+            end
             
             % Draw quasi-random points
             qrng = haltonset(2, 'Skip', 1e3 + ceil(1e6 * rand), 'Leap', 1e2);
