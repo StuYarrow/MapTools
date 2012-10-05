@@ -48,7 +48,9 @@ dFeatDists = featDist - mean(featDist);
 tc = sum(dFeatDists .* dMapDists) ./ sqrt(sum(dFeatDists .^ 2) .* sum(dMapDists .^ 2));
 
 % Is n small enough to do exact permutation?
-if factorial(n) > nMC
+nExact = factorial(n);
+
+if nExact > nMC
     % Do MC permutation
     Tp = zeros(nMC, 1);
     for i = 1 : nMC
@@ -62,18 +64,17 @@ if factorial(n) > nMC
     p = (sum(Tp > tc) + 1) ./ (nMC + 1);
 else
     % Do exact permutation
-    nMC = factorial(n);
-    Tp = zeros(nMC, 1);
+    Tp = zeros(nExact, 1);
     featRankShuf = perms(featRank);
     
-    for i = 1 : nMC
+    for i = 1 : nExact
         featDist = fDist(featRankShuf(i,:));
         dFeatDists = featDist - mean(featDist);
         
         Tp(i) = sum(dFeatDists .* dMapDists) ./ sqrt(sum(dFeatDists .^ 2) .* sum(dMapDists .^ 2));
     end
     
-    p = sum(Tp > tc) ./ nMC;
+    p = sum(Tp > tc) ./ nExact;
 end
 
 end
