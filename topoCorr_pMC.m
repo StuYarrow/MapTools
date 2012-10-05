@@ -47,15 +47,33 @@ dFeatDists = featDist - mean(featDist);
 
 tc = sum(dFeatDists .* dMapDists) ./ sqrt(sum(dFeatDists .^ 2) .* sum(dMapDists .^ 2));
 
-Tp = zeros(nMC, 1);
-for i = 1 : nMC
-    featRankShuf = featRank(randperm(n));
-    featDist = fDist(featRankShuf);
-    dFeatDists = featDist - mean(featDist);
+% Is n small enough to do exact permutation?
+if factorial(n) > nMC
+    % Do MC permutation
+    Tp = zeros(nMC, 1);
+    for i = 1 : nMC
+        featRankShuf = featRank(randperm(n));
+        featDist = fDist(featRankShuf);
+        dFeatDists = featDist - mean(featDist);
+        
+        Tp(i) = sum(dFeatDists .* dMapDists) ./ sqrt(sum(dFeatDists .^ 2) .* sum(dMapDists .^ 2));
+    end
     
-    Tp(i) = sum(dFeatDists .* dMapDists) ./ sqrt(sum(dFeatDists .^ 2) .* sum(dMapDists .^ 2));
+    p = (sum(Tp > tc) + 1) ./ (nMC + 1);
+else
+    % Do exact permutation
+    nMC = factorial(n);
+    Tp = zeros(nMC, 1);
+    featRankShuf = perms(featRank);
+    
+    for i = 1 : nMC
+        featDist = fDist(featRankShuf(i,:));
+        dFeatDists = featDist - mean(featDist);
+        
+        Tp(i) = sum(dFeatDists .* dMapDists) ./ sqrt(sum(dFeatDists .^ 2) .* sum(dMapDists .^ 2));
+    end
+    
+    p = sum(Tp > tc) ./ nMC;
 end
-
-p = sum(Tp > tc) ./ nMC;
 
 end
