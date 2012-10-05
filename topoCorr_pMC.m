@@ -61,7 +61,7 @@ if nExact > nMC
         Tp(i) = sum(dFeatDists .* dMapDists) ./ sqrt(sum(dFeatDists .^ 2) .* sum(dMapDists .^ 2));
     end
     
-    p = (sum(Tp > tc) + 1) ./ (nMC + 1);
+    p = (sum(Tp >= tc) + 1) ./ (nMC + 1);
 else
     % Do exact permutation
     Tp = zeros(nExact, 1);
@@ -74,7 +74,7 @@ else
         Tp(i) = sum(dFeatDists .* dMapDists) ./ sqrt(sum(dFeatDists .^ 2) .* sum(dMapDists .^ 2));
     end
     
-    p = sum(Tp > tc) ./ nExact;
+    p = sum(Tp >= tc) ./ nExact;
 end
 
 end
