@@ -8,8 +8,6 @@ z = z(:);
 
 n = length(x);
 
-
-
 % Compute map space triangulation
 dt = delaunay(x, y);
 edges = delaunayEdges(dt);
@@ -24,13 +22,29 @@ end
 % Compute measure
 mp = fPath(z);
 
-% Do MC permutation
-mcSamps = zeros(nMC,1);
-for i = 1 : nMC
-    zShuf = z(randperm(n));
-    mcSamps(i) = fPath(zShuf);
-end
+% Is n small enough to do exact permutation?
+nExact = factorial(n);
 
-p = sum(mcSamps < mp) ./ nMC;
+if nExact > nMC
+    % Do MC permutation
+    mcSamps = zeros(nMC,1);
+    
+    for i = 1 : nMC
+        zShuf = z(randperm(n));
+        mcSamps(i) = fPath(zShuf);
+    end
+
+    p = (sum(mcSamps <= mp) + 1) ./ (nMC + 1);    
+else
+    % Do exact permutation
+    mcSamps = zeros(nExact,1);
+    zShuf = perms(z);
+    
+    for i = 1 : nExact
+        mcSamps(i) = fPath(zShuf(i,:));
+    end
+    
+    p = sum(mcSamps <= mp) ./ nExact;
+end
 
 end
