@@ -39,13 +39,29 @@ end
 % Compute measure
 zrehen = mean(fIntruders(zr)) ./ n;
 
-% Do MC permutation
-samps = zeros(nMC,1);
-for i = 1 : nMC
-    zrShuf = zr(randperm(n));
-    samps(i) = mean(fIntruders(zrShuf)) ./ n;
-end
+% Is n small enough to do exact permutation?
+nExact = factorial(n);
 
-p = sum(samps < zrehen) ./ nMC;
+if nExact > nMC
+    % Do MC permutation
+    samps = zeros(nMC,1);
+    
+    for i = 1 : nMC
+        zrShuf = zr(randperm(n));
+        samps(i) = mean(fIntruders(zrShuf)) ./ n;
+    end
+    
+    p = (sum(samps <= zrehen) + 1) ./ (nMC + 1);
+else
+    % Do exact permutation
+    samps = zeros(nExact,1);
+    zrShuf = perms(zr);
+    
+    for i = 1 : nExact
+        samps(i) = mean(fIntruders(zrShuf(i,:))) ./ n;
+    end
+    
+    p = sum(samps <= zrehen) ./ nExact;
+end
 
 end
