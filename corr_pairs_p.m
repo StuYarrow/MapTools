@@ -1,8 +1,9 @@
-function [r, p] = corr_pairs_p(meth, x, y, z, n, pairs, circular)
+function [r, p] = corr_pairs_p(meth, x, y, z, nMC, pairs, circular)
 
 x = x(:);
 y = y(:);
 z = z(:);
+n = length(x);
 
 % Define correlation functions
     function rho = pearson(x1, x2)
@@ -76,21 +77,40 @@ dz = fdz(z);
 % Compute correlation coefficient
 r = fcorr(dCort, dz);
 
-% Do MC permutation
-rArr = zeros(n,1);
+% Is n small enough to do exact permutation?
+nExact = factorial(n);
 
-for i = 1 : n
-    % Shuffle z values
-    zShuffled = z(randperm(length(z)));
+if nExact > nMC
+    % Do MC permutation
+    rArr = zeros(nMC,1);
+
+    for i = 1 : nMC
+        % Shuffle z values
+        zShuffled = z(randperm(length(z)));
+
+        % Compute new feature space distances
+        dzShuffled = fdz(zShuffled);
+
+        % Compute rho for sample
+        rArr(i) = fcorr(dCort, dzShuffled);
+    end
     
-    % Compute new feature space distances
-    dzShuffled = fdz(zShuffled);
+    % Compute p value
+    p = (sum(rArr >= r) + 1) ./ (nMC + 1);
+else
+    % Do exact permutation
+    rArr = zeros(nExact, 1);
+    zShuffled = perms(z);
     
-    % Compute rho for sample
-    rArr(i) = fcorr(dCort, dzShuffled);
+    for i = 1 : nExact
+        % Compute new feature space distances
+        dzShuffled = fdz(zShuffled(i,:));
+
+        % Compute rho for sample
+        rArr(i) = fcorr(dCort, dzShuffled);        
+    end
+    
+    p = sum(rArr >= r) ./ nExact;
 end
-
-% Compute p value
-p = sum(rArr > r) ./ n;
 
 end
