@@ -78,6 +78,6 @@ for i = 1 : nMC
 end
 
 tp = mean(tpNoise);
-p = sum(abs(tpSamples) < abs(tp)) ./ nMC;
+p = (sum(abs(tpSamples) <= abs(tp)) + 1) ./ (nMC + 1);
 
 end
