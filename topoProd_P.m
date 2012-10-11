@@ -2,7 +2,7 @@ function [tp, p] = topoProd_P(x, y, z, nMC, pairs, circular)
 
 % pairs is not used, but is explicitly in the args for compatibility with R2008b
 
-nMC2 = 100;
+
 
 if length(y) ~= length(x) || length(z) ~= length(x)
     error('All vectors must be same length')
@@ -15,6 +15,9 @@ z = z(:);
 n = length(x);
 In = ~~eye(n);
 sortIndices = repmat((1:n)', [1 n]);
+
+nMC2 = 1000;
+zJitterSD = 0.001 .* std(z);
 
 % Define feature space distance functions
 if circular
@@ -36,7 +39,7 @@ kk = 1 ./ (2 .* k);
 
 % Do initial short-run MC to resolve identical values in feature space
 for i = 1 : nMC2
-    zNoise = z + 0.001 .* randn(size(z));
+    zNoise = z + zJitterSD .* randn(size(z));
     featDist = fdz(zNoise);
     featDist(In) = -1;
     [featDistSort featInd] = sort(featDist, 2);
@@ -57,7 +60,7 @@ end
 
 % Do MC permutation
 for i = 1 : nMC
-    zNoise = z + 0.001 .* randn(size(z));
+    zNoise = z + zJitterSD .* randn(size(z));
     shuffled = zNoise(randperm(n));
     featDist = fdz(shuffled);
     featDist(In) = -1;
@@ -73,7 +76,7 @@ for i = 1 : nMC
     Q1(:,1) = [];
     Q2(:,1) = [];
     
-    logP3 = cumsum(log(Q1) + log(Q2), 2) .* kk;    
+    logP3 = cumsum(log(Q1) + log(Q2), 2) .* kk;
     tpSamples(i) = 1 / (n^2 - n) .* sum(logP3(:));
 end
 
