@@ -253,6 +253,25 @@ classdef TopoMap < handle
 
 
         end
+        
+        
+        function plotInset(obj, pos)
+            if obj.circular
+                cl = [-pi pi];
+                cmap = 'HSV';
+            else
+                minVal = min(obj.map(:));
+                maxVal = max(obj.map(:));
+                cl = [minVal maxVal];
+                cmap = 'jet';
+            end
+            
+            ax = axes('position', pos);
+            imagesc(obj.map', cl)
+            colormap(cmap)
+            box on
+            set(ax, 'ydir', 'normal', 'xtick', [], 'ytick', [])
+        end
                 
     end
 end
