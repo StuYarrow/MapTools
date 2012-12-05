@@ -7,7 +7,7 @@ n = length(x);
 
 % Assign feature space function
 if circular
-    fdz = @(in) abs(circ_dist(bsxfun(@minus, in, in')));
+    fdz = @(in) abs(bsxfun(@circ_dist, in, in'));
 else
     fdz = @(in) abs(bsxfun(@minus, in, in'));
 end
