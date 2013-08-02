@@ -4,20 +4,23 @@ classdef TopoMap < handle
         debug = true;
         mapsize = 500;
         circular = false;
+        featureDims = 1;
         map = [];
         type = '';
     end
     
     methods
         
-        function obj = TopoMap(type, scale)
+        function obj = TopoMap(type, varargin)
             switch type
                 case 'linear'
                     obj.type = type;
                     obj.circular = false;
+                    obj.featureDims = 1;
                     
                     % Sample gradient
-                    theta = rand * 2 * pi - pi;
+                    %theta = rand * 2 * pi - pi;
+                    theta = 0;
                     a = cos(theta);
                     b = sin(theta);
                     
@@ -31,6 +34,9 @@ classdef TopoMap < handle
                 case 'orient'
                     obj.type = type;
                     obj.circular = true;
+                    obj.featureDims = 1;
+                    assert(nargin == 2, 'args should be of the form: (''orient'', scale)')
+                    scale = varargin{1};
                     
                     % Define filter coordinate space
                     spacing = 1/400;
@@ -52,6 +58,9 @@ classdef TopoMap < handle
                 case 'clust'
                     obj.type = type;
                     obj.circular = true;
+                    obj.featureDims = 1;
+                    assert(nargin == 2, 'args should be of the form: (''clust'', scale)')
+                    scale = varargin{1};
                     
                     % Max density (40 x 40 seed points)
                     seedDens = 40;
@@ -78,6 +87,68 @@ classdef TopoMap < handle
                     y = x';
                     z = zSeeds(dsearchn(seeds, tri, [x(:) y(:)]));                    
                     obj.map = reshape(z, size(x));
+                
+                case 'linear2'
+                    obj.type = type;
+                    obj.circular = [false false];
+                    obj.featureDims = 2;
+                    assert(nargin == 2, 'args should be of the form: (''linear2'', theta)')
+                    
+                    % Set gradients
+                    % scale arg is angle difference between feature dim gradients
+                    theta = [0 varargin{1}];
+                    a = cos(theta);
+                    b = sin(theta);
+                    
+                    % Generate map space
+                    x = -0.5 : 1/obj.mapsize : 0.5;
+                    
+                    % Generate map
+                    fmap1 = @(x1, x2) a(1) .* x1 + b(1) .* x2;
+                    fmap2 = @(x1, x2) a(2) .* x1 + b(2) .* x2;
+                    obj.map = cat(3, bsxfun(fmap1, x, x'), bsxfun(fmap2, x, x'));
+                    
+                case 'composite'
+                    obj.type = type;
+                    obj.circular = [false false true];
+                    obj.featureDims = 3;
+                    assert(nargin == 3, 'args should be of the form: (''composite'', theta, scale)')
+                    
+                    theta = [0 varargin{1}];
+                    a = cos(theta);
+                    b = sin(theta);
+                    scale = varargin{2};
+                    
+                    % Generate map space
+                    x = -0.5 : 1/obj.mapsize : 0.5;
+                    
+                    % Generate linear map dims
+                    fmap1 = @(x1, x2) a(1) .* x1 + b(1) .* x2;
+                    fmap2 = @(x1, x2) a(2) .* x1 + b(2) .* x2;
+                    
+                    % Define filter coordinate space
+                    spacing = 1/400;
+                    fX = -3*scale : spacing : 3*scale;
+                    
+                    % Generate difference of gaussians filter
+                    fXnorm2 = bsxfun(@(x1, x2) x1.^2 + x2.^2, fX, fX');
+                    h = 1 / (2 * pi * scale^2) * exp(-fXnorm2 / (2 * scale^2)) - 2 / (pi * scale^2) * exp(-2 * fXnorm2 / (scale^2));
+                    
+                    % Generate noise, allowing additional area for filtering
+                    noiseSize = obj.mapsize + length(fX);
+                    
+                    % Filter noise and compute Arg()                    
+                    xi = randn(noiseSize);
+                    xr = randn(noiseSize);
+                    
+                    obj.map = cat(3,...
+                                  bsxfun(fmap1, x, x'),...
+                                  bsxfun(fmap2, x, x'),...
+                                  angle( fftconv2(h, xr) + fftconv2(h, xi) * 1i ));
+                    
+                    % renormalise linear dims to same range as circular dim
+                    obj.map(obj.map == -1) = 1;
+                    obj.map(:,:,[1 2]) = pi .* obj.map(:,:,[1 2]);
                     
                 otherwise
                     error('Unsupported map type')
@@ -85,7 +156,7 @@ classdef TopoMap < handle
         end
         
         
-        function [x, y, z] = observe(obj, sampleSpacing, SNR, makePlots, publish, varargin)
+        function map = observe(obj, sampleSpacing, SNR, makePlots, publish, varargin)
             if length(varargin) >= 1
                 option = varargin{1};
                 
@@ -99,41 +170,62 @@ classdef TopoMap < handle
                 nPoints = ceil(1 / sampleSpacing^2);
             end
             
-            % Draw quasi-random points
+            % Draw quasi-random points on unit disc
             qrng = haltonset(2, 'Skip', 1e3 + ceil(1e6 * rand), 'Leap', 1e2);
             qrng = scramble(qrng, 'RR2');
-            obsPts = net(qrng, nPoints);
+            overSample = 2;
+            
+            while true
+                obsPts = net(qrng, nPoints * overSample);
+                onUnitDisc = sum((obsPts - 0.5).^2, 2) <= 0.25;
+                obsPts = obsPts(onUnitDisc,:);
+
+                if size(obsPts, 1) >= nPoints
+                    obsPts = obsPts(1:nPoints,:);
+                    break
+                else
+                    overSample = overSample + 1;
+                end
+            end
             
             % Snap to nearest pixel
             xi = ceil(obsPts(:,1) * size(obj.map,1));
             yi = ceil(obsPts(:,2) * size(obj.map,2));
             pos = 0 : 1/obj.mapsize : obj.mapsize;
-            x = pos(xi);
-            y = pos(yi);
+            x = pos(xi)';
+            y = pos(yi)';
+            xMap = [x y];
             
-            % Lookup z values
-            zRaw = obj.map(sub2ind(size(obj.map), xi, yi))';
-            
-            % Add noise
-            if obj.circular
-                stdNoise = circ_std(obj.map(:)) ./ SNR;
-            else
-                stdNoise = std(obj.map(:)) ./ SNR;
+            for fDim = 1 : obj.featureDims
+                % Lookup z values
+                zRaw = obj.map(sub2ind(size(obj.map), xi, yi, repmat(fDim, size(xi))))';
+                
+                % Add noise
+                subMap = obj.map(:,:,fDim);
+                
+                if obj.circular(fDim)
+                    stdNoise = circ_std(subMap(:)) ./ SNR;
+                else
+                    stdNoise = std(subMap(:)) ./ SNR;
+                end
+                
+                xFeature(:,fDim) = zRaw + randn(size(zRaw)) * stdNoise; %#ok<AGROW>
+                
+                if obj.circular(fDim)
+                    xFeature(:,fDim) = circ_dist(xFeature(:,fDim), 0); %#ok<AGROW> % wrap to interval [-pi pi]
+                end
             end
             
-            z = zRaw + randn(size(zRaw)) * stdNoise;
+            % Construct MapData object to return
+            map = MapData(xMap, xFeature, [false false], obj.circular);
             
-            if obj.circular
-                z = circ_dist(z, 0); % wrap to interval [-pi pi]
-            end
-            
-            if makePlots 
+            if makePlots && obj.featureDims == 1
                 if obj.circular
                     cl = [-pi pi];
                     cmap = 'HSV';
                 else
-                    minVal = min([obj.map(:) ; z(:)]);
-                    maxVal = max([obj.map(:) ; z(:)]);
+                    minVal = min([obj.map(:) ; xFeature(:)]);
+                    maxVal = max([obj.map(:) ; xFeature(:)]);
                     cl = [minVal maxVal];
                     cmap = 'jet';
                 end
@@ -170,8 +262,8 @@ classdef TopoMap < handle
                 scatter(x, y, 20, zRaw, 'filled')
                 caxis(cl)
                 colormap(cmap)
-                xlim([-0.02 1.02])
-                ylim([-0.02 1.02])
+                xlim([-0.05 1.05])
+                ylim([-0.05 1.05])
                 set(gca, 'dataaspectratio', [1 1 1])
                 set(gca, 'xtick', [], 'ytick', [])
                 box on
@@ -190,11 +282,11 @@ classdef TopoMap < handle
                     subplot(1,3,3)
                 end
                 
-                scatter(x,y,20,z,'filled')
+                scatter(x,y,20,xFeature,'filled')
                 caxis(cl)
                 colormap(cmap)
-                xlim([-0.02 1.02])
-                ylim([-0.02 1.02])
+                xlim([-0.05 1.05])
+                ylim([-0.05 1.05])
                 set(gca, 'dataaspectratio', [1 1 1])
                 set(gca, 'xtick', [], 'ytick', [])
                 box on
@@ -214,6 +306,8 @@ classdef TopoMap < handle
         
         
         function plot(obj)
+            assert(obj.featureDims == 1, 'maps of 1-D features only')
+            
             if obj.circular
                 cl = [-pi pi];
                 ticks = -pi : pi/2 : pi;
@@ -256,6 +350,8 @@ classdef TopoMap < handle
         
         
         function plotInset(obj, pos)
+            if obj.featureDims ~= 1, return; end
+            
             if obj.circular
                 cl = [-pi pi];
                 cmap = 'HSV';
