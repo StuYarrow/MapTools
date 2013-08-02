@@ -17,7 +17,7 @@ mask = ~~tril(ones(n), -1);
 
     function d = fdz_circ(r)
         d = abs(bsxfun(@minus, r, r'));
-        d(d > n) = n - d(d > n); % Resolve 'long way round' distances
+        d(d > n/2) = n - d(d > n/2); % Resolve 'long way round' distances
         d = d(mask);
     end
 

@@ -13,7 +13,7 @@ dt = delaunay(x, y);
 edges = delaunayEdges(dt);
 
 % Define path length functions
-if circular
+if ~circular
     fPath = @(in) mean( (in(edges(:,1)) - in(edges(:,2))).^2 );
 else
     fPath = @(in) mean( circ_dist(in(edges(:,1)), in(edges(:,2))).^2 );
@@ -34,7 +34,7 @@ if nExact > nMC
         mcSamps(i) = fPath(zShuf);
     end
 
-    p = (sum(mcSamps <= mp) + 1) ./ (nMC + 1);    
+    p = (sum(mcSamps <= mp) + 1) ./ (nMC + 1);
 else
     % Do exact permutation
     mcSamps = zeros(nExact,1);
