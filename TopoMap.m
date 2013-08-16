@@ -239,7 +239,7 @@ classdef TopoMap < handle
                 imagesc(obj.map', cl)
                 colormap(cmap)
                 hold on
-                plot(xi, yi, 'w+', 'markersize', 10, 'linewidth', 1)
+                plot(xi, yi, 'w+', 'markersize', 15, 'linewidth', 2)
                 set(gca, 'dataaspectratio', [1 1 1], 'ydir', 'normal')
                 set(gca, 'xtick', [], 'ytick', [])
                 title('Ground truth map')
@@ -248,18 +248,18 @@ classdef TopoMap < handle
                     set(gca, 'ActivePositionProperty', 'OuterPosition')
                     set(gcf, 'Color', 'w')
                     set(gcf, 'Units', 'centimeters');
-                    set(gcf, 'OuterPosition', [5 10 10 10]);
+                    set(gcf, 'OuterPosition', [5 10 16 16]);
                     %shrinkfig(ax, 0.9)
                     
-                    export_fig(sprintf('modelplots/mapModelA_%s', datestr(now, 30)), '-pdf')
-                    system(sprintf('~/Scripts/pdf2eps modelplots/mapModelA_%s.pdf', datestr(now, 30)));
-                    system(sprintf('rm modelplots/mapModelA_%s.pdf', datestr(now, 30)));
+                    export_fig(sprintf('modelplots/mapModelA_%s', datestr(now, 30)), '-pdf', '-painters')
+                    %system(sprintf('~/Scripts/pdf2eps modelplots/mapModelA_%s.pdf', datestr(now, 30)));
+                    %system(sprintf('rm modelplots/mapModelA_%s.pdf', datestr(now, 30)));
                     figure
                 else
                     subplot(1,3,2)
                 end
                 
-                scatter(x, y, 20, zRaw, 'filled')
+                scatter(x, y, 50, zRaw, 'filled')
                 caxis(cl)
                 colormap(cmap)
                 xlim([-0.05 1.05])
@@ -273,16 +273,16 @@ classdef TopoMap < handle
                     set(gca, 'ActivePositionProperty', 'OuterPosition')
                     set(gcf, 'Color', 'w')
                     set(gcf, 'Units', 'centimeters');
-                    set(gcf, 'OuterPosition', [5 10 10 10]);
+                    set(gcf, 'OuterPosition', [5 10 16 16]);
                     %shrinkfig(ax, 0.9)
 
-                    export_fig(sprintf('modelplots/mapModelB_%s', datestr(now, 30)), '-eps')
+                    export_fig(sprintf('modelplots/mapModelB_%s', datestr(now, 30)), '-pdf', '-painters')
                     figure
                 else
                     subplot(1,3,3)
                 end
                 
-                scatter(x,y,20,xFeature,'filled')
+                scatter(x, y, 50, xFeature, 'filled')
                 caxis(cl)
                 colormap(cmap)
                 xlim([-0.05 1.05])
@@ -296,56 +296,62 @@ classdef TopoMap < handle
                     set(gca, 'ActivePositionProperty', 'OuterPosition')
                     set(gcf, 'Color', 'w')
                     set(gcf, 'Units', 'centimeters');
-                    set(gcf, 'OuterPosition', [5 10 10 10]);
+                    set(gcf, 'OuterPosition', [5 10 16 16]);
                     %shrinkfig(ax, 0.9)
 
-                    export_fig(sprintf('modelplots/mapModelC_%s', datestr(now, 30)), '-eps')
+                    export_fig(sprintf('modelplots/mapModelC_%s', datestr(now, 30)), '-pdf', '-painters')
                 end
             end
         end
         
         
         function plot(obj)
-            assert(obj.featureDims == 1, 'maps of 1-D features only')
+            figure
             
-            if obj.circular
-                cl = [-pi pi];
-                ticks = -pi : pi/2 : pi;
-                cmap = 'HSV';
-            else
-                minVal = min(obj.map(:));
-                maxVal = max(obj.map(:));
-                cl = [minVal maxVal];
-                %ticks = minVal : diff(cl)/4 : maxVal;
-                cmap = 'jet';
-            end
+            for d = 1 : obj.featureDims
+                if obj.circular(d)
+                    cl = [-pi pi];
+                else
+                    minVal = min(min(obj.map(:,:,d)));
+                    maxVal = max(max(obj.map(:,:,d)));
+                    cl = [minVal maxVal];
+                    %ticks = minVal : diff(cl)/4 : maxVal;
+                end
                 
-            figure                
-            imagesc(obj.map', cl)
-            set(gca, 'fontsize', 11)
-            colormap(cmap)
-            hold on
-            set(gca, 'dataaspectratio', [1 1 1], 'ydir', 'normal')
-            set(gca, 'xtick', [], 'ytick', [])
-            %xlabel('x')
-            %ylabel('y')
-            %title('Ground truth map')
-            
-            cbax = colorbar('southoutside');
-            
-            if obj.circular
-                set(cbax, 'xtick', ticks)
-                set(cbax, 'xticklabel', {'-p' '-p/2' '0' 'p/2' 'p'}, 'fontname', 'Symbol', 'fontsize', 14)
-            else
-                set(cbax, 'fontname', 'Symbol', 'fontsize', 14)
+                subplot(1,obj.featureDims,d)
+                imagesc(obj.map(:,:,d)', cl)
+                set(gca, 'fontsize', 11)
+                hold on
+                set(gca, 'dataaspectratio', [1 1 1], 'ydir', 'normal')
+                set(gca, 'xtick', [], 'ytick', [])
+                %xlabel('x')
+                %ylabel('y')
+                %title('Ground truth map')
+
+                cbax = colorbar('southoutside');
+
+                if obj.circular(d)
+                    colormap('HSV')
+                    set(cbax, 'xtick', [-pi -pi/2 0 pi/2 pi])
+                    set(cbax, 'xticklabel', {'-p' '-p/2' '0' 'p/2' 'p'}, 'fontname', 'Symbol', 'fontsize', 14)
+                else
+                    colormap('jet')
+                    set(cbax, 'fontname', 'Symbol', 'fontsize', 14)
+                end
+                
+                if exist('cbfreeze', 'file') == 2
+                    cbfreeze
+                end
+                
+                if exist('freezeColors', 'file') == 2
+                    freezeColors
+                end
             end
             
             set(gcf, 'Color', 'w')
             set(gca, 'ActivePositionProperty', 'OuterPosition')
             set(gcf, 'Units', 'centimeters');
             set(gcf, 'OuterPosition', [5 10 16 16]);
-
-
         end
         
         
@@ -354,12 +360,14 @@ classdef TopoMap < handle
             
             if obj.circular
                 cl = [-pi pi];
+                %cmap = [0 : 1/63 : 1, 62/63 : -1/63 : 0]';
+                %cmap = [cmap cmap cmap];
                 cmap = 'HSV';
             else
                 minVal = min(obj.map(:));
                 maxVal = max(obj.map(:));
                 cl = [minVal maxVal];
-                cmap = 'jet';
+                cmap = 'gray';
             end
             
             ax = axes('position', pos);
