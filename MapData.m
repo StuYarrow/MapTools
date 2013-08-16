@@ -312,31 +312,27 @@ classdef MapData
             % make sure self distances sort first
             mapDist(In) = -1;
             ftrDist(In) = -1;
-            
-            jitterSDmap = 0.001 .* std(mapDist(:)) .* tril(ones(obj.n), -1);
-            jitterSDftr = 0.001 .* std(ftrDist(:)) .* tril(ones(obj.n), -1);
 
             % Do initial short-run MC to resolve identical values
             % i.e. multiple cells with identical characteristic stimuli or 
             % from same electrode penetration
             for i = 1 : nResolve
-                % add small amount of noise
-                mapJit = jitterSDmap .* randn([obj.n obj.n]);
-                mapJit = mapDist + mapJit + mapJit';
-                ftrJit = jitterSDftr .* randn([obj.n obj.n]);
-                ftrJit = ftrDist + ftrJit + ftrJit';
+                % shuffle both distance matrices identically
+                perm = randperm(obj.n);
+                mapShuf = mapDist(perm,perm);
+                ftrShuf = ftrDist(perm,perm);
                 % do sorting
-                [mapDistSort, mapInd] = sort(mapJit, 2);
-                [featDistSort, featInd] = sort(ftrJit, 2);
+                [mapDistSort, mapInd] = sort(mapShuf, 2);
+                [featDistSort, featInd] = sort(ftrShuf, 2);
                 % construct cross-sorted matrices
-                mapDistSortFeat = mapJit(sub2ind([obj.n obj.n], sortIndices, featInd));
-                featDistSortMap = ftrJit(sub2ind([obj.n obj.n], sortIndices, mapInd));
+                mapDistSortFeat = mapShuf(sub2ind([obj.n obj.n], sortIndices, featInd));
+                featDistSortMap = ftrShuf(sub2ind([obj.n obj.n], sortIndices, mapInd));
                 % compute ratios, discarding zeroth-order neighbours (self)
                 Q1 = featDistSortMap(:,2:end) ./ featDistSort(:,2:end);
                 Q2 = mapDistSort(:,2:end) ./ mapDistSortFeat(:,2:end);
                 % compute measure
                 logP3 = cumsum(log(Q1) + log(Q2), 2) .* kk;
-                sampsResolve(i) = mean(logP3(:));
+                sampsResolve(i) = mean(abs(logP3(:)));
             end
 
             % Allocate memory for samples
@@ -346,30 +342,27 @@ classdef MapData
             % No exact option in this case as we need to jitter the data to
             % resolve ties in the sort orders
             for i = 1 : nMC
-                % add small amount of noise
-                mapJit = jitterSDmap .* randn([obj.n obj.n]);
-                mapJit = mapDist + mapJit + mapJit';
-                ftrJit = jitterSDftr .* randn([obj.n obj.n]);
-                ftrJit = ftrDist + ftrJit + ftrJit';
-                % shuffle distance matrix
-                perm = randperm(obj.n);
-                ftrShuf = ftrJit(perm,perm);
+                % shuffle distance matrices independently
+                mapPerm = randperm(obj.n);
+                ftrPerm = randperm(obj.n);
+                mapShuf = mapDist(mapPerm,mapPerm);
+                ftrShuf = ftrDist(ftrPerm,ftrPerm);
                 % do sorting
-                [mapDistSort, mapInd] = sort(mapJit, 2);
+                [mapDistSort, mapInd] = sort(mapShuf, 2);
                 [featDistSort, featInd] = sort(ftrShuf, 2);
                 % construct cross-sorted matrices
-                mapDistSortFeat = mapJit(sub2ind([obj.n obj.n], sortIndices, featInd));
+                mapDistSortFeat = mapShuf(sub2ind([obj.n obj.n], sortIndices, featInd));
                 featDistSortMap = ftrShuf(sub2ind([obj.n obj.n], sortIndices, mapInd));
                 % compute ratios, discarding zeroth-order neighbours (self)
                 Q1 = featDistSortMap(:,2:end) ./ featDistSort(:,2:end);
                 Q2 = mapDistSort(:,2:end) ./ mapDistSortFeat(:,2:end);
                 % compute measure
                 logP3 = cumsum(log(Q1) + log(Q2), 2) .* kk;
-                sampsMC(i) = mean(logP3(:));
+                sampsMC(i) = mean(abs(logP3(:)));
             end
 
             c = mean(sampsResolve);
-            p = (sum(abs(sampsMC) <= abs(c)) + 1) ./ (nMC + 1);
+            p = (sum(sampsMC <= c) + 1) ./ (nMC + 1);
         end
         
         function [c, p] = topoCorr_p(obj, nMC)
