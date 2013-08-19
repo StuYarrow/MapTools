@@ -201,7 +201,7 @@ classdef MapData
                             permSamps(i) = mean(obj.distEuclidPairs2(obj.map, prs, obj.mapAngular));
                         end
 
-                        p = sum(permSamps <= c) ./ nExact;
+                        p = sum(permSamps <= cNonNorm) ./ nExact;
                     end
                     
                 case {2, 3} % 2-D or 3-D feature space cases
