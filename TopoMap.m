@@ -53,7 +53,7 @@ classdef TopoMap < handle
                     xi = randn(noiseSize);
                     xr = randn(noiseSize);
                     
-                    obj.map = angle( fftconv2(h, xr) + fftconv2(h, xi) * 1i );
+                    obj.map = angle( TopoMap.fftconv2(h, xr) + TopoMap.fftconv2(h, xi) * 1i );
                     
                 case 'clust'
                     obj.type = type;
@@ -144,7 +144,7 @@ classdef TopoMap < handle
                     obj.map = cat(3,...
                                   bsxfun(fmap1, x, x'),...
                                   bsxfun(fmap2, x, x'),...
-                                  angle( fftconv2(h, xr) + fftconv2(h, xi) * 1i ));
+                                  angle( TopoMap.fftconv2(h, xr) + TopoMap.fftconv2(h, xi) * 1i ));
                     
                     % renormalise linear dims to same range as circular dim
                     obj.map(obj.map == -1) = 1;
@@ -154,7 +154,6 @@ classdef TopoMap < handle
                     error('Unsupported map type')
             end
         end
-        
         
         function map = observe(obj, sampleSpacing, SNR, makePlots, publish, varargin)
             if length(varargin) >= 1
@@ -304,7 +303,6 @@ classdef TopoMap < handle
             end
         end
         
-        
         function plot(obj)
             figure
             
@@ -354,7 +352,6 @@ classdef TopoMap < handle
             set(gcf, 'OuterPosition', [5 10 16 16]);
         end
         
-        
         function plotInset(obj, pos)
             if obj.featureDims ~= 1, return; end
             
@@ -376,6 +373,26 @@ classdef TopoMap < handle
             box on
             set(ax, 'ydir', 'normal', 'xtick', [], 'ytick', [])
         end
-                
+        
+    end
+    
+    methods(Static, Access=protected)
+        
+        function ret = fftconv2(h, x)
+            % Work out dimensions and padding
+            fftSize = max([size(h) ; size(x)]);
+            outSize = abs(size(h) - size(x)) + 1;
+            pad = (fftSize - outSize) ./ 2;
+            % Forward transform filter and data
+            H = fft2(h, fftSize(1), fftSize(2));
+            X = fft2(x, fftSize(1), fftSize(2));
+            % Do convolution
+            HX = H .* X;
+            % Inverse transform result
+            hx = real(ifft2(HX));
+            % Return useful region of result
+            ret = hx(pad(1)+1 : end-pad(1), pad(2)+1 : end-pad(2));
+        end
+        
     end
 end
