@@ -677,8 +677,15 @@ classdef MapData
             
             % Construct triangulation
             dt = delaunayn(pts);
-            edges = delaunayEdges(dt);
-            
+            % Build list of every side of every triangle
+            edges = [dt(:,1:2) ; dt(:,2:3) ; dt(:,[3 1])];
+            % Sort
+            edges = sort(edges, 2);
+            edges = sortrows(edges);
+            % Remove duplicates
+            dups = ~any(diff(edges, 1), 2);
+            edges(dups,:) = [];
+                        
             % Resolve edges across periodic boundaries
             if any(circ)
                 % Discard any edges that do not contain an original point
@@ -702,6 +709,28 @@ classdef MapData
             g = MapData.constructGraph(points, circ);
             [e1, e2] = find(g);
             e = [e1 e2];
+        end
+        
+        function r = ranks(in)
+            % Sort values
+            [sorted, order] = sort(in);
+            % Locate values that are identical to their neighbours
+            id = diff(sorted) == 0;
+            id = id(:)';
+            % Locate the beginnings and ends of blocks of identical values
+            blockStart = find([id false] & ~[false id]);
+            blockEnd = find(~[id false] & [false id]);
+            nBlocks = length(blockStart);
+            % Generate uncorrected ranks
+            r = reshape(1 : length(in), size(in));
+            % Correct for rank ties by averaging rank within identical blocks
+            for i = 1 : nBlocks
+                s = blockStart(i);
+                e = blockEnd(i);
+                r(s:e) = sum(r(s:e)) ./ (e - s + 1);
+            end
+            % Rearrange into correct order
+            r(order) = r;
         end
         
         function sd = std(points, circ)
