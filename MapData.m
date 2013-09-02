@@ -43,6 +43,8 @@ classdef MapData
                     maxAng = max(max(obj.map(:,obj.mapAngular)));
                     assert(minAng > -pi && maxAng <= pi, 'map space angular coordinates must be in the interval (-pi pi]')
                 end
+            else
+                obj.mapAngular = false(1,obj.mapDims);
             end
             
             if nargin >= 4
@@ -56,6 +58,8 @@ classdef MapData
                     maxAng = max(max(obj.ftr(:,obj.ftrAngular)));
                     assert(minAng > -pi && maxAng <= pi, 'feature space angular coordinates must be in the interval (-pi pi]')
                 end
+            else
+                obj.ftrAngular = false(1,obj.ftrDims);
             end
             
             if nargin >= 5
