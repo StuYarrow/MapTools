@@ -316,6 +316,9 @@ classdef MapData
             % make sure self distances sort first
             mapDist(In) = -1;
             ftrDist(In) = -1;
+            % enforce non-zero distances
+            mapDist = mapDist + mean(mapDist(:)) * 10^-6;
+            ftrDist = ftrDist + mean(ftrDist(:)) * 10^-6;
 
             % Do initial short-run MC to resolve identical values
             % i.e. multiple cells with identical characteristic stimuli or 
