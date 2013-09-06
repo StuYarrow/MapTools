@@ -522,6 +522,22 @@ classdef MapData
             end
         end
         
+        function d = mapDist(obj)
+            if isempty(obj.pairs)
+                d = obj.distEuclidPairs(obj.map, nchoosek(1:obj.n, 2), obj.mapAngular);
+            else
+                d = obj.distEuclidPairs(obj.map, obj.pairs, obj.mapAngular);
+            end
+        end
+        
+        function d = ftrDist(obj)
+            if isempty(obj.pairs)
+                d = obj.distEuclidPairs(obj.ftr, nchoosek(1:obj.n, 2), obj.ftrAngular);
+            else
+                d = obj.distEuclidPairs(obj.ftr, obj.pairs, obj.ftrAngular);
+            end
+        end
+        
     end
     
     methods (Static)
