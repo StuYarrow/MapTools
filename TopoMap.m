@@ -72,7 +72,6 @@ classdef TopoMap < handle
                     
                     % Re-centre on origin and scale
                     seeds = seeds - 0.5;
-                    %seeds = (scale / 0.031) * seeds;
                     seeds = scale * seedDens * seeds;
                     
                     % Sample z-values
@@ -244,15 +243,6 @@ classdef TopoMap < handle
                 title('Ground truth map')
                 
                 if publish
-                    set(gca, 'ActivePositionProperty', 'OuterPosition')
-                    set(gcf, 'Color', 'w')
-                    set(gcf, 'Units', 'centimeters');
-                    set(gcf, 'OuterPosition', [5 10 16 16]);
-                    %shrinkfig(ax, 0.9)
-                    
-                    export_fig(sprintf('modelplots/mapModelA_%s', datestr(now, 30)), '-pdf', '-painters')
-                    %system(sprintf('~/Scripts/pdf2eps modelplots/mapModelA_%s.pdf', datestr(now, 30)));
-                    %system(sprintf('rm modelplots/mapModelA_%s.pdf', datestr(now, 30)));
                     figure
                 else
                     subplot(1,3,2)
@@ -269,13 +259,6 @@ classdef TopoMap < handle
                 title('Observations (no noise)')
                 
                 if publish
-                    set(gca, 'ActivePositionProperty', 'OuterPosition')
-                    set(gcf, 'Color', 'w')
-                    set(gcf, 'Units', 'centimeters');
-                    set(gcf, 'OuterPosition', [5 10 16 16]);
-                    %shrinkfig(ax, 0.9)
-
-                    export_fig(sprintf('modelplots/mapModelB_%s', datestr(now, 30)), '-pdf', '-painters')
                     figure
                 else
                     subplot(1,3,3)
@@ -290,16 +273,6 @@ classdef TopoMap < handle
                 set(gca, 'xtick', [], 'ytick', [])
                 box on
                 title('Observations (incl. noise)')
-                
-                if publish
-                    set(gca, 'ActivePositionProperty', 'OuterPosition')
-                    set(gcf, 'Color', 'w')
-                    set(gcf, 'Units', 'centimeters');
-                    set(gcf, 'OuterPosition', [5 10 16 16]);
-                    %shrinkfig(ax, 0.9)
-
-                    export_fig(sprintf('modelplots/mapModelC_%s', datestr(now, 30)), '-pdf', '-painters')
-                end
             end
         end
         
@@ -313,7 +286,6 @@ classdef TopoMap < handle
                     minVal = min(min(obj.map(:,:,d)));
                     maxVal = max(max(obj.map(:,:,d)));
                     cl = [minVal maxVal];
-                    %ticks = minVal : diff(cl)/4 : maxVal;
                 end
                 
                 subplot(1,obj.featureDims,d)
@@ -322,9 +294,7 @@ classdef TopoMap < handle
                 hold on
                 set(gca, 'dataaspectratio', [1 1 1], 'ydir', 'normal')
                 set(gca, 'xtick', [], 'ytick', [])
-                %xlabel('x')
-                %ylabel('y')
-                %title('Ground truth map')
+
 
                 cbax = colorbar('southoutside');
 
