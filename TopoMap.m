@@ -327,14 +327,12 @@ classdef TopoMap < handle
             
             if obj.circular
                 cl = [-pi pi];
-                %cmap = [0 : 1/63 : 1, 62/63 : -1/63 : 0]';
-                %cmap = [cmap cmap cmap];
                 cmap = 'HSV';
             else
                 minVal = min(obj.map(:));
                 maxVal = max(obj.map(:));
                 cl = [minVal maxVal];
-                cmap = 'gray';
+                cmap = 'jet';
             end
             
             ax = axes('position', pos);
