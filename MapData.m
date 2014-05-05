@@ -594,8 +594,8 @@ classdef MapData
             end
 
             function rho = spearman(x1, x2)
-                r1 = ranks(x1);
-                r2 = ranks(x2);
+                r1 = MapData.ranks(x1);
+                r2 = MapData.ranks(x2);
                 rho = corrcoef(r1, r2);
                 rho = rho(1,2);
             end
